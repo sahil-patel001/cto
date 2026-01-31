@@ -1,0 +1,73 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Customer {
+  id        String   @id @default(cuid())
+  name      String
+  email     String?
+  phone     String
+  address   String?
+  gstNumber String?  @map("gst_number")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  
+  bills     Bill[]
+
+  @@map("customers")
+}
+
+model Bill {
+  id            String     @id @default(cuid())
+  billNumber    String     @unique @map("bill_number")
+  customerId    String     @map("customer_id")
+  customer      Customer   @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  billDate      DateTime   @default(now()) @map("bill_date")
+  
+  subtotal      Float
+  cgst          Float      @default(0)
+  sgst          Float      @default(0)
+  igst          Float      @default(0)
+  discount      Float      @default(0)
+  totalAmount   Float      @map("total_amount")
+  
+  notes         String?
+  status        BillStatus @default(DRAFT)
+  
+  userId        String     @map("user_id")
+  createdAt     DateTime   @default(now()) @map("created_at")
+  updatedAt     DateTime   @updatedAt @map("updated_at")
+  
+  items         BillItem[]
+
+  @@map("bills")
+}
+
+model BillItem {
+  id              String  @id @default(cuid())
+  billId          String  @map("bill_id")
+  bill            Bill    @relation(fields: [billId], references: [id], onDelete: Cascade)
+  
+  fabricType      String  @map("fabric_type")
+  description     String?
+  quantity        Float
+  unit            String  @default("Meter")
+  rate            Float
+  amount          Float
+  
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@map("bill_items")
+}
+
+enum BillStatus {
+  DRAFT
+  FINALIZED
+  PAID
+  CANCELLED
+}
